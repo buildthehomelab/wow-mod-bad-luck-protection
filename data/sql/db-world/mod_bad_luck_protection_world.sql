@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `mod_bad_luck_rule` (
   `scope` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0 per character, 1 per account',
   `step` FLOAT NOT NULL DEFAULT 0 COMMENT 'percent per counted kill, 0 = the kind''s default from the config',
   `complete_item` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'owning this item also ends the streak, 0 for none',
-  `comment` VARCHAR(100) NOT NULL DEFAULT '',
+  `comment` VARCHAR(160) NOT NULL DEFAULT '',
   PRIMARY KEY (`item`, `creature`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='mod-bad-luck-protection: protected drops per boss';
 
@@ -45,7 +45,7 @@ INSERT INTO `mod_bad_luck_rule` (`item`, `creature`, `kind`, `scope`, `step`, `c
 (17782, 12056, 0, 0, 0, 0,     'Talisman of Binding Shard - Baron Geddon (mod-lost-legendaries)'),
 (17783, 12057, 0, 0, 0, 0,     'Talisman of Binding Fragment - Garr (mod-lost-legendaries)'),
 (17142, 12397, 0, 0, 0, 0,     'Shard of the Defiler - Lord Kazzak, Blasted Lands (mod-lost-legendaries)'),
-(23051, 351018, 0, 0, 0, 0,    'Glaive of the Defender - Sapphiron, 40 player Naxxramas (mod-lost-legendaries, mod-individual-progression)'),
+(23051, 351018, 0, 0, 0, 0,    'Glaive of the Defender - Sapphiron, 40 player Naxxramas (mod-lost-legendaries + mod-individual-progression)'),
 (32837, 22917, 0, 0, 0, 0,     'Warglaive of Azzinoth (main hand) - Illidan Stormrage'),
 (32838, 22917, 0, 0, 0, 0,     'Warglaive of Azzinoth (off hand) - Illidan Stormrage'),
 (34334, 25315, 0, 0, 0, 0,     'Thori''dal, the Stars'' Fury - Kil''jaeden');
