@@ -14,7 +14,9 @@
 --   complete_item  owning this item also ends the streak and stops the rolls: what the drop is
 --                  made into (Thunderfury for a Binding), 0 for nothing
 --
--- Add your own rows for other drops. Idempotent: the module's rows are replaced, yours stay.
+-- Add your own rows for other drops. Outside raids keep one boss per item: a streak remembers
+-- only the last boss that counted, so two dungeon bosses for one item could count the first
+-- again after a reset on the same day. Idempotent: the module's rows are replaced, yours stay.
 
 CREATE TABLE IF NOT EXISTS `mod_bad_luck_rule` (
   `item` INT UNSIGNED NOT NULL COMMENT 'the drop',

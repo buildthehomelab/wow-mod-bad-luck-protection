@@ -43,7 +43,8 @@ BadLuck.Step.Mount = 5
 #    BadLuck.CountEveryKill
 #        Description: 0: a boss counts once per character and lockout (a raid) or day (a dungeon
 #                     or a world boss), so resetting Stratholme over and over doesn't ramp the
-#                     roll. 1: every kill counts.
+#                     roll. Each boss counts on its own: the Vault of Archavon's four each count
+#                     for the mammoth. 1: every kill counts.
 #        Default:     0
 #
 
@@ -59,12 +60,3 @@ BadLuck.CountEveryKill = 0
 
 BadLuck.Announce = 1
 
-#
-#    BadLuck.WorldBossRange
-#        Description: For a boss out in the world (Lord Kazzak), how far from the corpse, in
-#                     yards, a member of the group that tapped it can stand and still count.
-#                     Inside an instance everyone on the map counts, wherever they are.
-#        Default:     150
-#
-
-BadLuck.WorldBossRange = 150

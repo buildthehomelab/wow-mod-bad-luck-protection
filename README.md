@@ -30,8 +30,10 @@ Those are the module's rows. Protecting another drop is one row in a table: see
 ## How it works
 
 - When one of those bosses dies to players, **every real player in the instance** (dead ones
-  too) rolls once for each protected item it has. For a boss out in the world, the group that
-  tapped it rolls, as far as it is standing within 150 yards. Bots roll nothing.
+  too) rolls once for each protected item it has that their class and race can use: no
+  Warglaives for a mage, no Horde mammoth for the Alliance. For a boss out in the world, the
+  group that tapped it rolls, those of it near enough for the core's own kill credit. Bots roll
+  nothing.
 - The roll is **`step` percent for every kill you have counted without the item**. Your first
   kill counts but gives no bonus (the stock roll is all there is). Your second kill rolls at
   10% for a legendary, 5% for a mount; your third at 20% and 10%; and so on, until the roll
@@ -40,15 +42,19 @@ Those are the module's rows. Protecting another drop is one row in a table: see
   their mount by the sixth.
 - A win puts the item **straight into your bags**, or in your mailbox when they are full, and
   ends the streak. So does getting the item any other way: from the corpse, a roll, the master
-  looter, or a game master. A mount's streak also ends when you learn the mount.
-- Nobody rolls for something they have: the item, the mount it teaches, or what the item is
-  made into (a Binding with Thunderfury in the bank).
+  looter, or a game master. A mount's streak also ends when you learn the mount. On a kill where
+  the boss's own loot holds the item, the kill counts but nobody bonus-rolls: one copy per kill.
+- Nobody rolls for something they have: the item (bags, bank or mailbox), the mount it teaches,
+  or what the item is made into (a Binding with Thunderfury in the bank).
 - **A kill counts once per lockout** for a raid boss, and **once per day** for a dungeon or
   world boss (until the next daily quest reset), so resetting Stratholme twenty times tonight
-  ramps nothing. `BadLuck.CountEveryKill` turns that off.
+  ramps nothing. Each boss counts on its own: the four Vault of Archavon bosses are four counts
+  towards the mammoth. `BadLuck.CountEveryKill` turns the limit off.
 - Legendaries are the **character's** streak. Mounts are the **account's**: every character on
   the account counts towards the same one, and the one that wins ends it for all. That fits
-  account-wide mounts; without them, set `scope` to 0 in the rule rows.
+  account-wide mounts; without them, set `scope` to 0 in the rule rows. With mod-playerbots,
+  your own alt bots are characters of your account too: one of them looting the mount ends the
+  account's streak.
 - After each counted kill you are told where you stand. `.luck` lists your running streaks,
   `.luck all` every protected drop and where you stand on each.
 
@@ -113,7 +119,6 @@ themselves at the next start. No client patch, no addon.
 | `BadLuck.Step.Mount` | `5` | The same for kind 1 |
 | `BadLuck.CountEveryKill` | `0` | `1`: every kill counts, not one per lockout or day |
 | `BadLuck.Announce` | `1` | `0` silent, `1` tell the player after each counted kill and on a win, `2` tell their group of a win too |
-| `BadLuck.WorldBossRange` | `150` | Yards from a world boss's corpse within which the tapping group counts |
 
 ## What it adds to the databases
 
@@ -133,8 +138,9 @@ server stopped. Items that bonus rolls gave are ordinary items and stay.
 - **A boss died and nobody was told anything.** The boss has no rule (`.luck all` lists the
   protected drops and their bosses), the kill didn't count because this lockout or day already
   did (`.luck` shows the count), everyone already has the item, or the boss wasn't killed by
-  players (`.die`, or something else in the room). A game master in GM mode (`.gm on`) never
-  counts: switch it off to test.
+  players: something else in the room, or `.die` with `DieCommand.Mode = 1` (with mode 0 the
+  core treats `.die` as the game master's damage and gives loot, so the kill counts here too).
+  A game master in GM mode (`.gm on`) never counts: switch it off to test.
 - **"mod_bad_luck_rule names item N, which doesn't exist".** A rule row for an item from a
   module this server doesn't have. Harmless; delete the row to quiet it.
 - **A bot got nothing.** On purpose.

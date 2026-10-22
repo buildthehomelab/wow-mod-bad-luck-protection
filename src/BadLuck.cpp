@@ -7,14 +7,18 @@
  *   what            world table mod_bad_luck_rule: an item and the boss creature it protects
  *                   against, with how much the chance grows per kill
  *   when            the creature dies to players (the core's own test for loot and credit)
- *   who             every real player in the instance, dead or alive; for a boss out in the
- *                   world, the loot recipient's group within BadLuck.WorldBossRange yards. Bots
- *                   are sessions without a client and get nothing. Nor does a player who already
- *                   has the item, the mount it teaches, or what the item is made into.
+ *   who             every real player in the instance, dead or alive, who could use the item
+ *                   (its class and race limits, so a mage never rolls for Warglaives and the
+ *                   Alliance never for the Horde's mammoth); for a boss out in the world, the
+ *                   loot recipient's group at the core's own reward distance. Bots are sessions
+ *                   without a client and get nothing. Nor does a player who already has the
+ *                   item (bags, bank or mailbox), the mount it teaches, or what it is made into.
  *   how much        step * kills counted so far without the item. The first kill counts (stock
  *                   roll only), the second gives `step` percent, and 100 / step kills later the
- *                   roll can't fail. The item goes into the player's bags, or by mail when they
- *                   are full. A win ends the streak; so does getting the item any other way.
+ *                   roll can't fail. On a kill where the boss's own loot holds the item, the
+ *                   kill counts but nobody bonus-rolls: one copy per kill. The item goes into
+ *                   the player's bags, or by mail when they are full. A win ends the streak; so
+ *                   does getting the item any other way.
  *   how often       a kill counts once per character per boss and period: a raid's lockout, a
  *                   dungeon's or world boss's day (the next daily quest reset). A raid boss in
  *                   another instance within one lockout counts again, which only happens when a
@@ -39,6 +43,8 @@
 #include "Item.h"
 #include "ItemTemplate.h"
 #include "Log.h"
+#include "LootMgr.h"
+#include "Mail.h"
 #include "Map.h"
 #include "ObjectMgr.h"
 #include "Player.h"
@@ -70,12 +76,15 @@ namespace
     std::unordered_map<uint32, std::vector<size_t>> rulesByItem;        // item -> rules
     std::unordered_map<uint32, uint32> itemByMountSpell;                // mount spell -> item
 
-    // A streak: counted kills without the item, and the period of the last kill that counted.
+    // A streak: counted kills without the item, and the last kill that counted: its period, its
+    // raid instance and its boss, so the same boss in the same lockout or day counts once while
+    // another boss with the same item (the Vault of Archavon's four) counts on its own.
     struct Streak
     {
         uint32 fails = 0;
         uint64 periodEnd = 0;
         uint32 instanceId = 0;
+        uint32 creature = 0;
     };
 
     // scope -> owner -> item -> streak. Bosses die on map threads, several maps at once, hence
@@ -134,12 +143,34 @@ namespace
         return map->IsRaid() ? map->GetInstanceId() : 0;
     }
 
+    // The item's own class and race limits, as the core checks them before equipping.
+    bool CanUse(Player* player, Rule const& rule)
+    {
+        return (rule.allowableClass & player->getClassMask()) && (rule.allowableRace & player->getRaceMask());
+    }
+
+    // Waiting in the player's mailbox: a bonus roll that found full bags, or a master looter's
+    // mail. Not in the bags yet, so HasItemCount doesn't see it.
+    bool InMail(Player* player, uint32 item)
+    {
+        for (Mail const* mail : player->GetMails())
+            for (MailItemInfo const& info : mail->items)
+                if (info.item_template == item)
+                    return true;
+        return false;
+    }
+
+    bool HasOrAwaits(Player* player, uint32 item)
+    {
+        return player->HasItemCount(item, 1, true) || InMail(player, item);
+    }
+
     // Has the item already, the mount it teaches, or what it is made into: nothing to roll for.
     bool Owns(Player* player, Rule const& rule)
     {
-        if (player->HasItemCount(rule.item, 1, true))
+        if (HasOrAwaits(player, rule.item))
             return true;
-        if (rule.completeItem && player->HasItemCount(rule.completeItem, 1, true))
+        if (rule.completeItem && HasOrAwaits(player, rule.completeItem))
             return true;
         if (rule.mountSpell && player->HasSpell(rule.mountSpell))
             return true;
@@ -148,8 +179,8 @@ namespace
 
     void SaveStreak(uint32 owner, Scope scope, uint32 item, Streak const& streak)
     {
-        CharacterDatabase.Execute("REPLACE INTO mod_bad_luck_streak (owner, scope, item, fails, period_end, instance) VALUES ({}, {}, {}, {}, {}, {})",
-            owner, uint32(scope), item, streak.fails, streak.periodEnd, streak.instanceId);
+        CharacterDatabase.Execute("REPLACE INTO mod_bad_luck_streak (owner, scope, item, fails, period_end, instance, creature) VALUES ({}, {}, {}, {}, {}, {}, {})",
+            owner, uint32(scope), item, streak.fails, streak.periodEnd, streak.instanceId, streak.creature);
     }
 
     void DeleteStreak(uint32 owner, Scope scope, uint32 item)
@@ -237,8 +268,9 @@ namespace
         }
     }
 
-    // One player's roll for one rule on this kill.
-    void Roll(Player* player, Rule const& rule, Creature* boss, uint64 periodEnd, uint32 instanceId)
+    // One player's roll for one rule on this kill. With `stockDropped` the boss's own loot
+    // holds the item this time: the kill counts, but nobody rolls for a second copy.
+    void Roll(Player* player, Rule const& rule, Creature* boss, uint64 periodEnd, uint32 instanceId, bool stockDropped)
     {
         uint32 owner = OwnerOf(player, rule.scope);
 
@@ -255,13 +287,14 @@ namespace
             std::lock_guard<std::mutex> guard(streaksLock);
             Streak& streak = streaks[rule.scope][owner][rule.item];
 
-            // Counted this period already (the same kill again: a reset dungeon, or a raid
-            // boss that the core credits twice).
-            if (!config.countEveryKill && streak.periodEnd == periodEnd && streak.instanceId == instanceId && streak.periodEnd)
+            // This boss counted this period already (the same kill again: a reset dungeon, or
+            // a raid boss that the core credits twice).
+            if (!config.countEveryKill && streak.periodEnd && streak.periodEnd == periodEnd
+                && streak.instanceId == instanceId && streak.creature == rule.creature)
                 return;
 
             float chance = step * float(streak.fails);
-            won = chance > 0.0f && roll_chance_f(chance);
+            won = !stockDropped && chance > 0.0f && roll_chance_f(chance);
             if (won)
             {
                 streaks[rule.scope][owner].erase(rule.item);
@@ -273,6 +306,7 @@ namespace
                 ++streak.fails;
                 streak.periodEnd = periodEnd;
                 streak.instanceId = instanceId;
+                streak.creature = rule.creature;
                 after = streak;
             }
         }
@@ -312,22 +346,32 @@ namespace
             return players;
         }
 
-        // Out in the world: the group that tapped the boss, as far as it is standing near.
+        // Out in the world: the group that tapped the boss, those of it near enough for the
+        // core's own kill credit (a dead member's corpse counts as where they are).
         Player* recipient = boss->GetLootRecipient();
         if (Group* group = boss->GetLootRecipientGroup())
         {
             for (GroupReference const* ref = group->GetFirstMember(); ref; ref = ref->next())
             {
                 Player* member = ref->GetSource();
-                if (eligible(member) && member->IsInMap(boss) && member->IsWithinDistInMap(boss, config.worldBossRange))
+                if (eligible(member) && member->IsAtGroupRewardDistance(boss))
                     players.push_back(member);
             }
             return players;
         }
 
-        if (eligible(recipient) && recipient->IsInMap(boss) && recipient->IsWithinDistInMap(boss, config.worldBossRange))
+        if (eligible(recipient) && recipient->IsAtGroupRewardDistance(boss))
             players.push_back(recipient);
         return players;
+    }
+
+    // The boss's own loot holds the item this kill.
+    bool StockDropped(Creature* boss, uint32 item)
+    {
+        for (LootItem const& loot : boss->loot.items)
+            if (loot.itemid == item)
+                return true;
+        return false;
     }
 
     void OnBossDeath(Creature* boss)
@@ -338,7 +382,7 @@ namespace
 
         // Killed by players, as the core asks before it gives loot or credit: not by a game
         // master's command or by something else in the room.
-        if (!boss->IsDamageEnoughForLootingAndReward())
+        if (!boss->IsDamageEnoughForLootingAndReward() || boss->IsLootRewardDisabled())
             return;
 
         Map* map = boss->FindMap();
@@ -352,8 +396,13 @@ namespace
         uint64 periodEnd = PeriodEnd(map);
         uint32 instanceId = KillInstance(map);
         for (size_t index : itr->second)
+        {
+            Rule const& rule = rules[index];
+            bool stockDropped = StockDropped(boss, rule.item);
             for (Player* player : players)
-                Roll(player, rules[index], boss, periodEnd, instanceId);
+                if (CanUse(player, rule))
+                    Roll(player, rule, boss, periodEnd, instanceId, stockDropped);
+        }
     }
 
     void LoadStreaks()
@@ -367,7 +416,7 @@ namespace
         streaks[1].clear();
 
         uint32 count = 0;
-        if (QueryResult result = CharacterDatabase.Query("SELECT owner, scope, item, fails, period_end, instance FROM mod_bad_luck_streak"))
+        if (QueryResult result = CharacterDatabase.Query("SELECT owner, scope, item, fails, period_end, instance, creature FROM mod_bad_luck_streak"))
         {
             do
             {
@@ -376,7 +425,7 @@ namespace
                 if (scope > 1)
                     continue;
                 streaks[scope][fields[0].Get<uint32>()][fields[2].Get<uint32>()] =
-                    { fields[3].Get<uint32>(), fields[4].Get<uint64>(), fields[5].Get<uint32>() };
+                    { fields[3].Get<uint32>(), fields[4].Get<uint64>(), fields[5].Get<uint32>(), fields[6].Get<uint32>() };
                 ++count;
             } while (result->NextRow());
         }
@@ -401,12 +450,13 @@ namespace
                         {
                             streak.instanceId = 0;
                             streak.periodEnd = 0;
+                            streak.creature = 0;
                             forgot = true;
                         }
         }
 
         if (forgot)
-            CharacterDatabase.Execute("UPDATE mod_bad_luck_streak SET instance = 0, period_end = 0 WHERE instance = {}", instanceId);
+            CharacterDatabase.Execute("UPDATE mod_bad_luck_streak SET instance = 0, period_end = 0, creature = 0 WHERE instance = {}", instanceId);
     }
 }
 
@@ -435,7 +485,8 @@ uint32 BadLuck::LoadRules()
     rulesByItem.clear();
     itemByMountSpell.clear();
 
-    uint32 skipped = 0;
+    uint32 missingItems = 0;
+    uint32 missingBosses = 0;
     if (QueryResult result = WorldDatabase.Query("SELECT item, creature, kind, scope, step, complete_item, comment FROM mod_bad_luck_rule ORDER BY kind, item, creature"))
     {
         do
@@ -455,15 +506,17 @@ uint32 BadLuck::LoadRules()
             {
                 LOG_ERROR("server.loading", "mod-bad-luck-protection: mod_bad_luck_rule names item {} (creature {}), which doesn't exist; row skipped",
                     rule.item, rule.creature);
-                ++skipped;
+                ++missingItems;
                 continue;
             }
 
             // A boss this server doesn't have (another module's) never dies: the row is kept,
-            // for `.luck all` and in case the module arrives, but it is said once.
+            // for `.luck all` and in case the module arrives.
             if (!sObjectMgr->GetCreatureTemplate(rule.creature))
-                ++skipped;
+                ++missingBosses;
 
+            rule.allowableClass = proto->AllowableClass;
+            rule.allowableRace = proto->AllowableRace;
             rule.mountSpell = MountSpellOf(proto);
             if (rule.mountSpell)
                 itemByMountSpell[rule.mountSpell] = rule.item;
@@ -474,8 +527,8 @@ uint32 BadLuck::LoadRules()
         } while (result->NextRow());
     }
 
-    LOG_INFO("server.loading", "mod-bad-luck-protection: {} rule(s) for {} item(s) loaded, {} with a boss or item not on this server",
-        rules.size(), rulesByItem.size(), skipped);
+    LOG_INFO("server.loading", "mod-bad-luck-protection: {} rule(s) for {} item(s) loaded; {} skipped for a missing item, {} kept for a boss not on this server",
+        rules.size(), rulesByItem.size(), missingItems, missingBosses);
     return uint32(rules.size());
 }
 
@@ -484,8 +537,13 @@ std::vector<Standing> BadLuck::StandingsOf(Player* player)
     std::vector<Standing> standings;
     std::unordered_map<uint32, size_t> byItem;
 
+    // Only what this player could ever use: the other faction's mammoth or another class's
+    // glaive is no business of theirs.
     for (Rule const& rule : rules)
     {
+        if (!CanUse(player, rule))
+            continue;
+
         auto [itr, added] = byItem.try_emplace(rule.item, standings.size());
         if (added)
         {
@@ -493,6 +551,7 @@ std::vector<Standing> BadLuck::StandingsOf(Player* player)
             standing.item = rule.item;
             standing.kind = rule.kind;
             standing.scope = rule.scope;
+            standing.step = StepOf(rule);
             standing.owned = Owns(player, rule);
             standings.push_back(std::move(standing));
         }
@@ -502,7 +561,6 @@ std::vector<Standing> BadLuck::StandingsOf(Player* player)
     std::lock_guard<std::mutex> guard(streaksLock);
     for (Standing& standing : standings)
     {
-        float step = StepOf(rules[rulesByItem[standing.item].front()]);
         auto owners = streaks[standing.scope].find(OwnerOf(player, standing.scope));
         if (owners == streaks[standing.scope].end())
             continue;
@@ -510,7 +568,7 @@ std::vector<Standing> BadLuck::StandingsOf(Player* player)
         if (streak == owners->second.end())
             continue;
         standing.fails = streak->second.fails;
-        standing.nextChance = std::min(100.0f, step * float(standing.fails));
+        standing.nextChance = std::min(100.0f, standing.step * float(standing.fails));
     }
 
     return standings;
@@ -538,6 +596,7 @@ bool BadLuck::SetFails(Player* player, uint32 item, uint32 fails)
         current.fails = fails;
         current.periodEnd = 0;
         current.instanceId = 0;
+        current.creature = 0;
         streak = current;
     }
     SaveStreak(owner, scope, item, streak);
@@ -632,11 +691,10 @@ public:
         config.stepMount = std::clamp(sConfigMgr->GetOption<float>("BadLuck.Step.Mount", 5.0f), 0.0f, 100.0f);
         config.countEveryKill = sConfigMgr->GetOption<bool>("BadLuck.CountEveryKill", false);
         config.announce = uint8(std::clamp(sConfigMgr->GetOption<uint32>("BadLuck.Announce", 1), 0u, 2u));
-        config.worldBossRange = std::max(0.0f, sConfigMgr->GetOption<float>("BadLuck.WorldBossRange", 150.0f));
 
         LOG_INFO("server.loading", "mod-bad-luck-protection: {}, +{}% per kill for legendaries, +{}% for mounts, counting {}",
             config.enabled ? "enabled" : "disabled", config.stepLegendary, config.stepMount,
-            config.countEveryKill ? "every kill" : "one kill per lockout or day");
+            config.countEveryKill ? "every kill" : "one kill per boss and lockout or day");
     }
 
     void OnStartup() override

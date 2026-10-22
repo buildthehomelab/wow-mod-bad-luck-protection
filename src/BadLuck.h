@@ -40,6 +40,8 @@ namespace BadLuck
         float step = 0.0f;          // percent per counted kill, 0 = the kind's default
         uint32 completeItem = 0;    // owning this ends the streak too (what the drop is made into)
         uint32 mountSpell = 0;      // the mount the item teaches, 0 for none (found at load)
+        uint32 allowableClass = 0;  // the item's own class and race limits (found at load)
+        uint32 allowableRace = 0;
         std::string comment;
     };
 
@@ -50,7 +52,6 @@ namespace BadLuck
         float stepMount = 5.0f;
         bool countEveryKill = false;
         uint8 announce = 1;         // 0 silent, 1 whisper the player, 2 tell the group of a win too
-        float worldBossRange = 150.0f;
     };
 
     extern Config config;
@@ -101,12 +102,14 @@ namespace BadLuck
         Kind kind = KIND_LEGENDARY;
         Scope scope = SCOPE_CHARACTER;
         std::vector<uint32> creatures;
+        float step = 0.0f;
         uint32 fails = 0;
         float nextChance = 0.0f;
         bool owned = false;         // has the item, its mount or its complete_item already
     };
 
-    // The player's standing with every protected item, one entry per item.
+    // The player's standing with every protected item their class and race can use, one entry
+    // per item.
     std::vector<Standing> StandingsOf(Player* player);
 
     // Game master's hands on a streak. SetFails returns false for an item no rule protects.
