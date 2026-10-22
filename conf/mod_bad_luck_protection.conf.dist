@@ -1,0 +1,70 @@
+[worldserver]
+
+########################################
+# mod-bad-luck-protection
+#
+# A personal bonus roll for legendaries and rare mounts that grows with every boss kill that
+# didn't drop them. Which drops, from which bosses, is the world table mod_bad_luck_rule.
+########################################
+
+#
+#    BadLuck.Enable
+#        Description: Master switch. With 0 no kill counts and nobody gets a bonus roll. The
+#                     streaks players already have stay in the characters database and go on
+#                     where they were when this is 1 again.
+#        Default:     1
+#
+
+BadLuck.Enable = 1
+
+#
+#    BadLuck.Step.Legendary
+#        Description: Percent added to a player's bonus roll for every kill they have counted
+#                     without a legendary drop (a rule of kind 0 with no step of its own). The
+#                     first kill counts but gives no bonus; the second rolls at this percent;
+#                     at 100 / step kills the roll can't fail. With 10: half of all players
+#                     have theirs by the fourth kill, everyone by the eleventh.
+#        Default:     10
+#
+
+BadLuck.Step.Legendary = 10
+
+#
+#    BadLuck.Step.Mount
+#        Description: The same for mounts (a rule of kind 1 with no step of its own). With 5:
+#                     half of all players have theirs by the sixth kill, everyone by the
+#                     twenty-first.
+#        Default:     5
+#
+
+BadLuck.Step.Mount = 5
+
+#
+#    BadLuck.CountEveryKill
+#        Description: 0: a boss counts once per character and lockout (a raid) or day (a dungeon
+#                     or a world boss), so resetting Stratholme over and over doesn't ramp the
+#                     roll. 1: every kill counts.
+#        Default:     0
+#
+
+BadLuck.CountEveryKill = 0
+
+#
+#    BadLuck.Announce
+#        Description: 0: silent. 1: after each counted kill the player is told their streak and
+#                     their chance at the next, and a win says what dropped for them. 2: a win
+#                     is also told to the rest of their group.
+#        Default:     1
+#
+
+BadLuck.Announce = 1
+
+#
+#    BadLuck.WorldBossRange
+#        Description: For a boss out in the world (Lord Kazzak), how far from the corpse, in
+#                     yards, a member of the group that tapped it can stand and still count.
+#                     Inside an instance everyone on the map counts, wherever they are.
+#        Default:     150
+#
+
+BadLuck.WorldBossRange = 150
