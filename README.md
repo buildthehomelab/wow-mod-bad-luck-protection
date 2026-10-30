@@ -23,6 +23,8 @@ is for the twentieth.
 | Reins of the Onyxian Drake | Onyxia | 1-2% | account |
 | Reins of the Grand Black War Mammoth | Archavon, Emalon, Koralon, Toravon | shared group roll | account |
 | Foror's Fabled Steed | Nefarian | 1% | account; needs mod-lost-legendaries |
+| Cobalt Primordial, Zandalari and Golden Primal Direhorns, Savage Raptor, Swift Albino Raptor | Tarborn Tyrant (each skin drops its own) | 10% | account; needs [mod-primal-bones](https://github.com/buildthehomelab/wow-mod-primal-bones) |
+| Slate, Amber and Jade Primordial Direhorns, Crimson Primal Direhorn | Zandalari Warbringer (each drops the direhorn it rides) | 10% | account; needs mod-primal-bones |
 
 Those are the module's rows. Protecting another drop is one row in a table: see
 [Adding a drop](#adding-a-drop).
@@ -93,8 +95,9 @@ mount its own streak.
 ## Requirements
 
 - AzerothCore 3.3.5a. Works with and without mod-playerbots (bots never roll).
-- Rules for another module's drops (mod-lost-legendaries, mod-individual-progression's 40 player
-  Naxxramas) are harmless without that module: the boss or item isn't there, so nothing happens.
+- Rules for another module's drops (mod-lost-legendaries, mod-primal-bones,
+  mod-individual-progression's 40 player Naxxramas) are harmless without that module: the boss
+  or item isn't there, so nothing happens.
 
 ## Install
 
