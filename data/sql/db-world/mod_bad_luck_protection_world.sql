@@ -37,7 +37,7 @@ DELETE FROM `mod_bad_luck_rule` WHERE (`item`, `creature`) IN (
   (43959, 31125), (43959, 31722), (43959, 33993), (43959, 33994), (43959, 35360), (43959, 38433), (43959, 38462),
   (44083, 31125), (44083, 31722), (44083, 33993), (44083, 33994), (44083, 35360), (44083, 38433), (44083, 38462),
   (400533, 9506001), (401038, 9506005), (400418, 9506006), (401180, 9506007), (400545, 9506008),
-  (400535, 9506002), (400534, 9506003), (400536, 9506004), (400546, 9506009));
+  (400535, 9506002), (400534, 9506003), (400536, 9506004), (400546, 9506009), (401179, 9506010));
 
 -- Legendaries: the character's own streak.
 INSERT INTO `mod_bad_luck_rule` (`item`, `creature`, `kind`, `scope`, `step`, `complete_item`, `comment`) VALUES
@@ -82,7 +82,7 @@ INSERT INTO `mod_bad_luck_rule` (`item`, `creature`, `kind`, `scope`, `step`, `c
 (44083, 38462, 1, 1, 0, 0, 'Reins of the Grand Black War Mammoth (Horde) - Toravon (25 player)');
 
 -- Un'Goro rare elites from mod-primal-bones, each dropping its own mount at 10%: the five
--- Tarborn Tyrant skins and the four Zandalari Warbringer direhorn colours. Open-world rares, so
+-- Tarborn Tyrant skins and the five Zandalari Warbringer direhorn colours. Open-world rares, so
 -- a kill counts once a day; one creature per mount, so the day's count never repeats.
 INSERT INTO `mod_bad_luck_rule` (`item`, `creature`, `kind`, `scope`, `step`, `complete_item`, `comment`) VALUES
 (400533, 9506001, 1, 1, 0, 0, 'Cobalt Primordial Direhorn - Tarborn Tyrant (dark), Un''Goro (mod-primal-bones)'),
@@ -93,4 +93,5 @@ INSERT INTO `mod_bad_luck_rule` (`item`, `creature`, `kind`, `scope`, `step`, `c
 (400535, 9506002, 1, 1, 0, 0, 'Slate Primordial Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)'),
 (400534, 9506003, 1, 1, 0, 0, 'Amber Primordial Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)'),
 (400536, 9506004, 1, 1, 0, 0, 'Jade Primordial Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)'),
-(400546, 9506009, 1, 1, 0, 0, 'Crimson Primal Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)');
+(400546, 9506009, 1, 1, 0, 0, 'Crimson Primal Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)'),
+(401179, 9506010, 1, 1, 0, 0, 'Palehide Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)');

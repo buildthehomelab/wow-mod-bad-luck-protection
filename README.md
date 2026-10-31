@@ -24,7 +24,7 @@ is for the twentieth.
 | Reins of the Grand Black War Mammoth | Archavon, Emalon, Koralon, Toravon | shared group roll | account |
 | Foror's Fabled Steed | Nefarian | 1% | account; needs mod-lost-legendaries |
 | Cobalt Primordial, Zandalari and Golden Primal Direhorns, Savage Raptor, Swift Albino Raptor | Tarborn Tyrant (each skin drops its own) | 10% | account; needs [mod-primal-bones](https://github.com/buildthehomelab/wow-mod-primal-bones) |
-| Slate, Amber and Jade Primordial Direhorns, Crimson Primal Direhorn | Zandalari Warbringer (each drops the direhorn it rides) | 10% | account; needs mod-primal-bones |
+| Slate, Amber and Jade Primordial Direhorns, Crimson Primal Direhorn, Palehide Direhorn | Zandalari Warbringer (each drops the direhorn it rides) | 10% | account; needs mod-primal-bones |
 
 Those are the module's rows. Protecting another drop is one row in a table: see
 [Adding a drop](#adding-a-drop).
