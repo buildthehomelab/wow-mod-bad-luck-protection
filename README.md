@@ -23,7 +23,6 @@ is for the twentieth.
 | Reins of the Onyxian Drake | Onyxia | 1-2% | account |
 | Reins of the Grand Black War Mammoth | Archavon, Emalon, Koralon, Toravon | shared group roll | account |
 | Foror's Fabled Steed | Nefarian | 1% | account; needs mod-lost-legendaries |
-| Savage Raptor, Swift Albino Raptor | Tarborn Tyrant (green and pale skins) | 10% | account; needs [mod-primal-bones](https://github.com/buildthehomelab/wow-mod-primal-bones) |
 | All eight direhorn colours: Slate, Amber, Jade and Cobalt Primordial, Crimson and Golden Primal, Palehide and Zandalari Direhorns | Zandalari Warbringer (each drops the direhorn it rides) | 10% | account; needs mod-primal-bones |
 
 Those are the module's rows. Protecting another drop is one row in a table: see
