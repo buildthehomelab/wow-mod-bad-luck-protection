@@ -83,15 +83,12 @@ INSERT INTO `mod_bad_luck_rule` (`item`, `creature`, `kind`, `scope`, `step`, `c
 (44083, 38462, 1, 1, 0, 0, 'Reins of the Grand Black War Mammoth (Horde) - Toravon (25 player)');
 
 -- Un'Goro rare elites from mod-primal-bones, each dropping its own mount at 10%: the five
--- Tarborn Tyrant skins and the eight Zandalari Warbringer direhorn colours. Open-world rares, so
--- a kill counts once a day. Cobalt, Zandalari and Golden drop from a Tyrant and a Warbringer: both
--- kills feed the same streak (streaks are per item).
+-- Tarborn Tyrant raptors and the eight Zandalari Warbringer direhorn colours. Open-world rares,
+-- so a kill counts once a day; one creature per mount, so the day's count never repeats. The
+-- DELETE above still lists the dark, blue and brown Tyrants' old direhorn rules, to clear them.
 INSERT INTO `mod_bad_luck_rule` (`item`, `creature`, `kind`, `scope`, `step`, `complete_item`, `comment`) VALUES
-(400533, 9506001, 1, 1, 0, 0, 'Cobalt Primordial Direhorn - Tarborn Tyrant (dark), Un''Goro (mod-primal-bones)'),
-(401038, 9506005, 1, 1, 0, 0, 'Zandalari Direhorn - Tarborn Tyrant (blue), Un''Goro (mod-primal-bones)'),
 (400418, 9506006, 1, 1, 0, 0, 'Savage Raptor - Tarborn Tyrant (green), Un''Goro (mod-primal-bones)'),
 (401180, 9506007, 1, 1, 0, 0, 'Swift Albino Raptor - Tarborn Tyrant (pale), Un''Goro (mod-primal-bones)'),
-(400545, 9506008, 1, 1, 0, 0, 'Golden Primal Direhorn - Tarborn Tyrant (brown), Un''Goro (mod-primal-bones)'),
 (400535, 9506002, 1, 1, 0, 0, 'Slate Primordial Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)'),
 (400534, 9506003, 1, 1, 0, 0, 'Amber Primordial Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)'),
 (400536, 9506004, 1, 1, 0, 0, 'Jade Primordial Direhorn - Zandalari Warbringer, Un''Goro (mod-primal-bones)'),
